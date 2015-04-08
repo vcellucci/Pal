@@ -10,6 +10,7 @@
 #define Pal_ConcurrentStack_h
 
 #include <atomic>
+#include <memory>
 
 namespace Pal {
     
@@ -20,7 +21,7 @@ protected:
     struct Node
     {
         T data;
-        Node* next;
+        std::shared_ptr<Node> next;
         
         Node(const T& data)
         :data(data)
@@ -41,20 +42,19 @@ public:
     
     void push(const T& data)
     {
-        Node* newNode = new Node(data);
-        newNode->next = head.load();
-        while(!head.compare_exchange_weak(newNode->next, newNode));
+        auto newNode = std::make_shared<Node>(data);
+        newNode->next = std::atomic_load(&head);
+        while (!std::atomic_compare_exchange_weak(&head, &newNode->next, newNode));
         numElements.fetch_add(1, std::memory_order_acq_rel);
     }
     
     bool pop(T& data)
     {
-        Node* oldHead = head.load();
-        while (head && !head.compare_exchange_weak(oldHead, oldHead->next));
+        auto oldHead = std::atomic_load(&head);
+        while(oldHead && !std::atomic_compare_exchange_weak(&head, &oldHead, oldHead->next));
         if( oldHead )
         {
             data = oldHead->data;
-            delete oldHead;
             numElements.fetch_sub(1, std::memory_order_acq_rel);
             return true;
         }
@@ -63,7 +63,7 @@ public:
 
     bool empty() const
     {
-        return (head.load() == nullptr);
+        return  !head.get();
     }
     
     std::size_t size() const
@@ -72,7 +72,8 @@ public:
     }
     
 protected:
-    std::atomic<Node*> head;
+   // std::atomic<Node*> head;
+    std::shared_ptr<Node> head;
     std::atomic<std::size_t> numElements;
 };
     

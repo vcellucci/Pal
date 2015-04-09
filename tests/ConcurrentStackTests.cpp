@@ -48,61 +48,70 @@ TEST_F(ConcurrentStackTests, testSize)
     ASSERT_EQ(1, stack.size());
 }
 
+void consume(std::atomic_bool& done, int* array, Pal::ConcurrentStack<int>& stack)
+{
+    while (!done.load())
+    {
+        int val;
+        if(stack.pop(val))
+        {
+            array[val] = val;
+            
+        }
+    }
+    
+    while (!stack.empty())
+    {
+        
+        int val;
+        if(stack.pop(val))
+        {
+            array[val] = val;
+            
+        }
+    }
+}
+
 TEST_F(ConcurrentStackTests, testMultiThread)
 {
     Pal::ConcurrentStack<int> stack;
-    auto thread1 = [&stack]()
-    {
-        stack.push(1);
-        stack.push(2);
-    };
+    constexpr int size = 200000;
+    std::atomic_bool done1(false);
+    int array[size];
+    memset(array, -1, sizeof(array));
     
-    auto thread2 = [&stack]()
+    auto push1 = [&stack, &done1]()
     {
-        for( int i = 0; i< 2; i++ )
+        for (int i = 0; i < size/2;i++)
         {
-            int val;
-            if(stack.pop(val))
-            {
-                ASSERT_TRUE(val == 1 || val == 2);
-            }
+            stack.push(i);
         }
+        
+        done1.store(true);
     };
     
-    auto thread3 = [&stack]()
+    auto cons1 = [&]()
     {
-        for( int i = 0; i< 2; i++ )
-        {
-            int val;
-            if(stack.pop(val))
-            {
-                ASSERT_TRUE(val == 1 || val == 2);
-            }
-        }
+        consume(done1, array, stack);
     };
     
-    auto thread4 = [&stack]()
+    auto cons2 = [&]()
     {
-        for( int i = 0; i< 2; i++ )
-        {
-            int val;
-            if(stack.pop(val))
-            {
-                ASSERT_TRUE(val == 1 || val == 2);
-            }
-        }
+        consume(done1, array, stack);
     };
     
     
-    std::thread t1(thread1);
-    std::thread t2(thread2);
-    std::thread t3(thread3);
-    std::thread t4(thread4);
+    std::thread p1(push1);
+    std::thread c1(cons1);
+    std::thread c2(cons2);
     
-    t1.join();
-    t2.join();
-    t3.join();
-    t4.join();
+    p1.join();
+    c1.join();
+    c2.join();
+    
+    for (int i = 0; i < size/2; i++) {
+        ASSERT_EQ(i, array[i]);
+    }
 }
 
 

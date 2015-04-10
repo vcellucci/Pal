@@ -34,15 +34,15 @@ public:
     void free()
     {
         auto old_head = head.load();
-        if(head.exchange(nullptr) == old_head)
+        head.exchange(nullptr);
+        
+        while (old_head)
         {
-            while (old_head)
-            {
-                auto temp = old_head;
-                old_head = old_head->next;
-                delete temp;
-            }
+            auto temp = old_head;
+            old_head = old_head->next;
+            delete temp;
         }
+        
     }
     
 protected:

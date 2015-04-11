@@ -15,16 +15,16 @@
 namespace details {
     
 template<class node_t>
-class free_stack
+class free_list
 {
 public:
     
-    free_stack()
+    free_list()
     :head(nullptr)
     {
     }
     
-    void push(node_t* _node)
+    void push_front(node_t* _node)
     {
         auto old_head = head.load();
         while (!head.compare_exchange_weak(old_head, _node)) {}
@@ -33,16 +33,13 @@ public:
     
     void free()
     {
-        auto old_head = head.load();
-        head.exchange(nullptr);
-        
+        auto old_head = head.exchange(nullptr);
         while (old_head)
         {
             auto temp = old_head;
             old_head = old_head->next;
             delete temp;
         }
-        
     }
     
 protected:

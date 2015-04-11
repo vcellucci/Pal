@@ -114,7 +114,7 @@ protected:
         }
         else
         {
-            nodes_to_be_deleted.push(n);
+            nodes_to_be_deleted.push_front(n);
         }
     }
     
@@ -123,7 +123,7 @@ protected:
     std::atomic<node*> tail;
     std::atomic<std::size_t> elements;
     std::atomic_int threads_in_pop;
-    free_stack<node> nodes_to_be_deleted;
+    free_list<node> nodes_to_be_deleted;
 };
     
 }

@@ -155,6 +155,7 @@ void consume(std::atomic_bool& done, int* array, int_queue& q)
         {
             array[val] = val;
         }
+
     }
     
     // drain
@@ -165,12 +166,13 @@ void consume(std::atomic_bool& done, int* array, int_queue& q)
         {
             array[val] = val;
         }
+
     }
 }
 
 TEST_F(SpmcQueueTests, testParallel)
 {
-    constexpr int size = 2000000;
+    constexpr int size = 200000;
     int array[size];
     memset(array, -1, sizeof(array));
     int_queue q;
@@ -217,8 +219,8 @@ TEST_F(SpmcQueueTests, testFreeList)
     EXPECT_CALL(m, call());
     testable_node* node = new testable_node(&m);
     
-    details::free_stack<testable_node> list;
-    list.push(node);
+    details::free_list<testable_node> list;
+    list.push_front(node);
     
     list.free();
 }

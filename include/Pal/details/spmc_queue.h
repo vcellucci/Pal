@@ -44,8 +44,8 @@ public:
     
     void push(const data_t& _data)
     {
-        auto new_node = new node(_data);
         auto old_tail = tail.load();
+        auto new_node = new node(_data);
         old_tail->next = new_node;
         tail.store(new_node);
         elements++;
@@ -53,7 +53,7 @@ public:
     
     bool pop(data_t& _data)
     {
-        threads_in_pop++;
+        thread_count_sentry sentry(threads_in_pop);
         
         node* old_head;
         do
@@ -61,21 +61,19 @@ public:
             old_head = head.load();
             if(old_head == tail.load())
             {
-                threads_in_pop--;
                 return false;
             }
         }
         while (!head.compare_exchange_weak(old_head, old_head->next)) ;
         
-        if(!old_head->next)
+        if(old_head->next)
         {
-            return false;
+            _data = old_head->next->data;
+            try_reclaim(old_head);
+            elements--;
+            return true;
         }
-        _data = old_head->next->data;
-        try_reclaim(old_head);
-        elements--;
-
-        return true;
+        return false;
     }
     
     bool is_lock_free()
@@ -85,7 +83,6 @@ public:
                 tail.is_lock_free() &&
                 elements.is_lock_free());
     }
-
     
 protected:
     struct node
@@ -96,23 +93,32 @@ protected:
         node():next(nullptr){}
         
         node(const data_t& _data):data(_data), next(nullptr){}
+        
+    };
+    
+    struct thread_count_sentry
+    {
+        std::atomic_int& thread_count;
+        thread_count_sentry( std::atomic_int& c)
+        :thread_count(c)
+        {
+            thread_count++;
+        }
+        
+        ~thread_count_sentry()
+        {
+            thread_count--;
+        }
     };
     
 protected:
     void try_reclaim(node* n)
     {
-        if(threads_in_pop == 1)
+        if(threads_in_pop.load() == 1)
         {
-            if(!--threads_in_pop)
+            if(nodes_to_be_deleted.free()) // was it really the only thread?
             {
-                if(nodes_to_be_deleted.free())
-                {
-                    delete n;
-                }
-                else
-                {
-                    nodes_to_be_deleted.push_front(n);
-                }
+                delete n;
             }
             else
             {
@@ -122,7 +128,6 @@ protected:
         else
         {
             nodes_to_be_deleted.push_front(n);
-            --threads_in_pop;
         }
     }
     
@@ -133,6 +138,7 @@ protected:
     std::atomic_int threads_in_pop;
     free_list<node> nodes_to_be_deleted;
 };
+    
     
 }
 #endif

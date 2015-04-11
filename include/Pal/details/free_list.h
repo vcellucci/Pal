@@ -24,6 +24,11 @@ public:
     {
     }
     
+    ~free_list()
+    {
+        free();
+    }
+    
     void push_front(node_t* _node)
     {
         auto temp = _node;

@@ -26,20 +26,30 @@ public:
     
     void push_front(node_t* _node)
     {
+        auto temp = _node;
         auto old_head = head.load();
-        while (!head.compare_exchange_weak(old_head, _node)) {}
+        while (!head.compare_exchange_weak(old_head, _node))
+        {
+            _node = temp;
+        }
         _node->next = old_head;
+        
     }
     
-    void free()
+    bool free()
     {
-        auto old_head = head.exchange(nullptr);
-        while (old_head)
+        auto old_head = head.load();
+        if(head.compare_exchange_strong(old_head, nullptr) )
         {
-            auto temp = old_head;
-            old_head = old_head->next;
-            delete temp;
+            while (old_head)
+            {
+                auto temp = old_head;
+                old_head = old_head->next;
+                delete temp;
+            }
+            return true;
         }
+        return false;
     }
     
 protected:

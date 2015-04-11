@@ -12,6 +12,11 @@
 #include <atomic>
 #include "free_list.h"
 
+/*
+ Note: This is designed as a single-producer, multi-consumer queue(single-writer, multi-readers).  It has not been tested
+ for multi-writer
+ */
+
 namespace details {
     
 template<class data_t>
@@ -43,12 +48,12 @@ public:
         auto old_tail = tail.load();
         old_tail->next = new_node;
         tail.store(new_node);
-        elements.fetch_add(1);
+        elements++;
     }
     
     bool pop(data_t& _data)
     {
-        thread_count_sentry sentry(threads_in_pop);
+        threads_in_pop++;
         
         node* old_head;
         do
@@ -56,15 +61,20 @@ public:
             old_head = head.load();
             if(old_head == tail.load())
             {
+                threads_in_pop--;
                 return false;
             }
         }
         while (!head.compare_exchange_weak(old_head, old_head->next)) ;
         
+        if(!old_head->next)
+        {
+            return false;
+        }
         _data = old_head->next->data;
-        
         try_reclaim(old_head);
-        
+        elements--;
+
         return true;
     }
     
@@ -88,33 +98,31 @@ protected:
         node(const data_t& _data):data(_data), next(nullptr){}
     };
     
-    struct thread_count_sentry
-    {
-        thread_count_sentry(std::atomic_int& _count)
-        :count(_count)
-        {
-            count ++;
-        }
-        
-        ~thread_count_sentry()
-        {
-            count --;
-        }
-        
-        std::atomic_int& count;
-    };
-    
 protected:
     void try_reclaim(node* n)
     {
-        if(threads_in_pop.load() == 1)
+        if(threads_in_pop == 1)
         {
-            nodes_to_be_deleted.free();
-            delete n;
+            if(!--threads_in_pop)
+            {
+                if(nodes_to_be_deleted.free())
+                {
+                    delete n;
+                }
+                else
+                {
+                    nodes_to_be_deleted.push_front(n);
+                }
+            }
+            else
+            {
+                nodes_to_be_deleted.push_front(n);
+            }
         }
         else
         {
             nodes_to_be_deleted.push_front(n);
+            --threads_in_pop;
         }
     }
     

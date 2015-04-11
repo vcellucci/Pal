@@ -28,7 +28,7 @@ public:
     ,threads_in_pop(0)
     {
         head.store(new node());
-        tail.store(head);
+        tail.store(head.load());
     }
     
     bool empty() const
@@ -44,8 +44,9 @@ public:
     
     void push(const data_t& _data)
     {
-        auto old_tail = tail.load();
         auto new_node = new node(_data);
+        auto old_tail = tail.load();
+
         old_tail->next = new_node;
         tail.store(new_node);
         elements++;
@@ -56,15 +57,17 @@ public:
         thread_count_sentry sentry(threads_in_pop);
         
         node* old_head;
-        do
+        bool set = false;
+        while(!set)
         {
             old_head = head.load();
             if(old_head == tail.load())
             {
                 return false;
             }
+            
+            set = head.compare_exchange_strong(old_head, old_head->next);
         }
-        while (!head.compare_exchange_weak(old_head, old_head->next)) ;
         
         if(old_head->next)
         {
@@ -73,12 +76,12 @@ public:
             elements--;
             return true;
         }
+        try_reclaim(old_head);
         return false;
     }
     
     bool is_lock_free()
     {
-        
         return (head.is_lock_free() &&
                 tail.is_lock_free() &&
                 elements.is_lock_free());

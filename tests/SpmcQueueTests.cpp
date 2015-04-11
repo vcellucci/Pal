@@ -155,7 +155,6 @@ void consume(std::atomic_bool& done, int* array, int_queue& q)
         {
             array[val] = val;
         }
-
     }
     
     // drain
@@ -166,7 +165,6 @@ void consume(std::atomic_bool& done, int* array, int_queue& q)
         {
             array[val] = val;
         }
-
     }
 }
 
@@ -192,6 +190,8 @@ TEST_F(SpmcQueueTests, testParallel)
     auto cons2 = [&](){ consume(done, array, q); };
     auto cons3 = [&](){ consume(done, array, q); };
     auto cons4 = [&](){ consume(done, array, q); };
+    auto cons5 = [&](){ consume(done, array, q); };
+    auto cons6 = [&](){ consume(done, array, q); };
     
     std::vector<std::thread> threads;
     threads.push_back(std::thread(push));
@@ -199,6 +199,8 @@ TEST_F(SpmcQueueTests, testParallel)
     threads.push_back(std::thread(cons2));
     threads.push_back(std::thread(cons3));
     threads.push_back(std::thread(cons4));
+    threads.push_back(std::thread(cons5));
+    threads.push_back(std::thread(cons6));
     
     for( auto& t : threads)
     {

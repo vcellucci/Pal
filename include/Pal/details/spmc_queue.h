@@ -44,10 +44,11 @@ public:
     
     void push(const data_t& _data)
     {
-        auto new_node = new node(_data);
         auto old_tail = tail.load();
 
-        old_tail->next = new_node;
+        auto new_node = new node(_data);
+
+        old_tail->next.store(new_node);
         tail.store(new_node);
         elements++;
     }
@@ -66,17 +67,22 @@ public:
                 return false;
             }
             
-            set = head.compare_exchange_strong(old_head, old_head->next);
+            if(!old_head)
+            {
+                return false;
+            }
+            
+            set = head.compare_exchange_strong(old_head, old_head->next.load());
         }
         
-        if(old_head->next)
+        auto next_node = old_head->next.load();
+        if(next_node)
         {
-            _data = old_head->next->data;
+            _data = next_node->data;
             try_reclaim(old_head);
             elements--;
             return true;
         }
-        try_reclaim(old_head);
         return false;
     }
     
@@ -91,7 +97,7 @@ protected:
     struct node
     {
         data_t data;
-        node*  next;
+        std::atomic<node*>  next;
         
         node():next(nullptr){}
         
@@ -111,7 +117,7 @@ protected:
         ~thread_count_sentry()
         {
             thread_count--;
-        }
+        }	
     };
     
 protected:

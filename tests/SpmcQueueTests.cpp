@@ -31,7 +31,7 @@ public:
 
 struct testable_node
 {
-    testable_node* next;
+    std::atomic<testable_node*> next;
     testable_interface* data;
     testable_node(testable_interface* _data)
     : next(nullptr)
@@ -135,6 +135,7 @@ TEST_F(SpmcQueueTests, testPop)
     for(int i = 0; i < 3; i++)
     {
         q.push(i);
+        std::this_thread::yield();
     }
     
     for (int i = 0; i < 3; i++)
@@ -155,6 +156,10 @@ void consume(std::atomic_bool& done, int* array, int_queue& q)
         {
             array[val] = val;
         }
+        else
+        {
+            std::this_thread::yield();
+        }
     }
     
     // drain
@@ -165,6 +170,11 @@ void consume(std::atomic_bool& done, int* array, int_queue& q)
         {
             array[val] = val;
         }
+        else
+        {
+            std::this_thread::yield();
+        }
+
     }
 }
 
@@ -192,6 +202,17 @@ TEST_F(SpmcQueueTests, testParallel)
     auto cons4 = [&](){ consume(done, array, q); };
     auto cons5 = [&](){ consume(done, array, q); };
     auto cons6 = [&](){ consume(done, array, q); };
+    auto c7 = [&](){ consume(done, array, q); };
+    auto c8 = [&](){ consume(done, array, q); };
+    auto c9 = [&](){ consume(done, array, q); };
+    auto c10 = [&](){ consume(done, array, q); };
+    auto c11 = [&](){ consume(done, array, q); };
+    auto c12 = [&](){ consume(done, array, q); };
+    auto c13 = [&](){ consume(done, array, q); };
+    auto c14 = [&](){ consume(done, array, q); };
+    auto c15 = [&](){ consume(done, array, q); };
+    auto c16 = [&](){ consume(done, array, q); };
+
     
     std::vector<std::thread> threads;
     threads.push_back(std::thread(push));
@@ -201,6 +222,17 @@ TEST_F(SpmcQueueTests, testParallel)
     threads.push_back(std::thread(cons4));
     threads.push_back(std::thread(cons5));
     threads.push_back(std::thread(cons6));
+    
+    threads.push_back(std::thread( c7 ));
+    threads.push_back(std::thread( c8 ));
+    threads.push_back(std::thread( c9 ));
+    threads.push_back(std::thread( c10 ));
+    threads.push_back(std::thread( c11 ));
+    threads.push_back(std::thread( c12 ));
+    threads.push_back(std::thread( c13));
+    threads.push_back(std::thread( c14));
+    threads.push_back(std::thread( c15 ));
+    threads.push_back(std::thread( c16 ));
     
     for( auto& t : threads)
     {

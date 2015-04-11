@@ -37,7 +37,7 @@ public:
         {
             _node = temp;
         }
-        _node->next = old_head;
+        _node->next.store(old_head);
         
     }
     
@@ -49,7 +49,7 @@ public:
             while (old_head)
             {
                 auto temp = old_head;
-                old_head = old_head->next;
+                old_head = old_head->next.load();
                 delete temp;
             }
             return true;

@@ -52,6 +52,16 @@ public:
         tail.store(new_node);
         elements++;
     }
+        
+    void push( data_t&& _data)
+    {
+        auto old_tail = tail.load();
+        auto new_node = new node(std::move(_data));
+        
+        old_tail->next.store(new_node);
+        tail.store(new_node);
+        elements++;
+    }
     
     bool pop(data_t& _data)
     {
@@ -66,7 +76,30 @@ public:
         auto next_node = old_head->next.load();
         if(next_node)
         {
-            _data = next_node->data;
+            _data = std::move(next_node->data);
+            try_reclaim(old_head);
+            elements--;
+            return true;
+        }
+        
+        try_reclaim(old_head);
+        return false;
+    }
+    
+    bool pop(data_t&& _data)
+    {
+        thread_count_sentry sentry(threads_in_pop);
+        
+        auto old_head = update_head_for_current_thread();
+        if(!old_head)
+        {
+            return false;
+        }
+        
+        auto next_node = old_head->next.load();
+        if(next_node)
+        {
+            _data = std::move(next_node->data);
             try_reclaim(old_head);
             elements--;
             return true;
@@ -98,6 +131,11 @@ protected:
         , next(nullptr)
         {}
         
+        node(data_t&& _data)
+        : next(nullptr)
+        {
+            data = std::move(_data);
+        }
     };
     
     struct thread_count_sentry
@@ -142,18 +180,18 @@ protected:
         
         if(threads_in_pop.load() == 1)
         {
-            if(nodes_to_be_deleted.free()) // was it really the only thread?
+            if(pending_delete_nodes.free()) // was it really the only thread?
             {
                 delete n;
             }
             else
             {
-                nodes_to_be_deleted.push_front(n);
+                pending_delete_nodes.push_front(n);
             }
         }
         else
         {
-            nodes_to_be_deleted.push_front(n);
+            pending_delete_nodes.push_front(n);
         }
     }
     
@@ -162,7 +200,7 @@ protected:
     std::atomic<node*> tail;
     std::atomic<std::size_t> elements;
     std::atomic_int threads_in_pop;
-    free_list<node> nodes_to_be_deleted;
+    free_list<node> pending_delete_nodes;
 };
     
     

@@ -24,10 +24,32 @@ public:
         notEmpty.notify_one();
     }
     
+    void push( T&& val)
+    {
+        std::unique_lock<std::mutex> lk(monitor);
+        container.push_back(std::move(val));
+        notEmpty.notify_one();
+    }
+    
     std::size_t size() 
     {
         std::unique_lock<std::mutex> lk(monitor);
         return container.size();
+    }
+    
+    bool pop(T&& val)
+    {
+        std::unique_lock<std::mutex> lk(monitor);
+        while(container.empty() && !stopped) notEmpty.wait(lk);
+        
+        if( container.empty() )
+        {
+            return false;
+        }
+
+        val = std::move(container.front());
+        container.pop_front();
+        return true;
     }
     
     bool pop(T& val)
@@ -39,7 +61,7 @@ public:
         {
             return false;
         }
-
+        
         val = container.front();
         container.pop_front();
         return true;

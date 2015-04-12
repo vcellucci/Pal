@@ -222,7 +222,6 @@ TEST_F(SpmcQueueTests, testParallel)
     threads.push_back(std::thread(cons4));
     threads.push_back(std::thread(cons5));
     threads.push_back(std::thread(cons6));
-    
     threads.push_back(std::thread( c7 ));
     threads.push_back(std::thread( c8 ));
     threads.push_back(std::thread( c9 ));

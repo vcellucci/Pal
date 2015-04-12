@@ -32,6 +32,7 @@ public:
     void push_front(node_t* _node)
     {
         auto temp = _node;
+        temp->next = nullptr;
         auto old_head = head.load();
         while (!head.compare_exchange_weak(old_head, _node))
         {

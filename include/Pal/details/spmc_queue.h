@@ -83,6 +83,9 @@ public:
             elements--;
             return true;
         }
+        
+        try_reclaim(old_head);
+
         return false;
     }
     

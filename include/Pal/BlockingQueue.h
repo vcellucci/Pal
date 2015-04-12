@@ -1,3 +1,10 @@
+//
+//  Spinlock.h
+//  Pal
+//
+//  Created by Vittorio Cellucci on 2015-04-09.
+//
+//
 #ifndef __PAL__BLOCKINGQUEUE_H__
 #define __PAL__BLOCKINGQUEUE_H__
 

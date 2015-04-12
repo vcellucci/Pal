@@ -52,3 +52,26 @@ TEST_F(TaskPoolTests, testTaskWorkerWithArgs)
     ASSERT_EQ(5, testVal);
     
 }
+
+TEST_F(TaskPoolTests, testTaskPoolMultiTask)
+{
+    auto addTask = [](int x, int y)->int
+    {
+        return x + y;
+    };
+    
+    Pal::TaskPool<details::spmc_queue, int(int, int)> taskPool;
+    
+    std::future<int> futures[16];
+    
+    for(int i = 0; i < 16; i++ )
+    {
+        futures[i] = taskPool.submit(addTask, 1, i);
+    }
+    
+    for(int i = 0; i < 16; i++ )
+    {
+        int val = futures[i].get();
+        ASSERT_EQ((1+i), val);
+    }
+}

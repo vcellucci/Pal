@@ -13,6 +13,7 @@
 #include <future>
 #include <thread>
 #include <memory>
+#include <vector>
 #include "TaskPoolWorker.h"
 
 namespace Pal{
@@ -34,23 +35,25 @@ public:
     template<class ...FuncArgs>
     std::future<R> submit(std::function<R(Args...)> task, FuncArgs&&... funcArgs)
     {
-        std::size_t index = (currentThread + 1) % numThreads;
-        return workers[index]->worker.push(task, funcArgs...);
+        currentThread = (currentThread + 1) % numThreads;
+        return workers[currentThread]->worker.push(task, funcArgs...);
     }
     
 protected:
     void startThreads()
     {
-        for( std:: size_t i = 0; i < numThreads; i++ )
+        for( std::size_t i = 0; i < numThreads; i++ )
         {
-            WorkerPtr worker(new Worker());
+            WorkerPtr worker = std::make_shared<Worker>();
             workers.push_back(std::move(worker));
         }
     }
     
 protected:
+
     struct Worker
     {
+        using WorkQueue = typename TaskPoolWorker<ContainerT, R(Args...)>::WorkQueue;
         TaskPoolWorker<ContainerT, R(Args...)> worker;
         std::thread workerThread;
         
@@ -75,7 +78,8 @@ protected:
     };
     
 protected:
-    using WorkerPtr = std::unique_ptr<Worker>;
+    using WorkerPtr = std::shared_ptr<Worker>;
+    
     std::vector<WorkerPtr> workers;
     std::size_t numThreads;
     std::size_t currentThread;

@@ -42,10 +42,10 @@ public:
         return elements.load();
     }
     
+    // designed for single producer only
     void push(const data_t& _data)
     {
         auto old_tail = tail.load();
-
         auto new_node = new node(_data);
 
         old_tail->next.store(new_node);
@@ -57,22 +57,10 @@ public:
     {
         thread_count_sentry sentry(threads_in_pop);
         
-        node* old_head;
-        bool set = false;
-        while(!set)
+        auto old_head = update_head_for_current_thread();
+        if(!old_head)
         {
-            old_head = head.load();
-            if(old_head == tail.load())
-            {
-                return false;
-            }
-            
-            if(!old_head)
-            {
-                return false;
-            }
-            
-            set = head.compare_exchange_strong(old_head, old_head->next.load());
+            return false;
         }
         
         auto next_node = old_head->next.load();
@@ -85,7 +73,6 @@ public:
         }
         
         try_reclaim(old_head);
-
         return false;
     }
     
@@ -102,9 +89,14 @@ protected:
         data_t data;
         std::atomic<node*>  next;
         
-        node():next(nullptr){}
+        node()
+        : next(nullptr)
+        {}
         
-        node(const data_t& _data):data(_data), next(nullptr){}
+        node(const data_t& _data)
+        : data(_data)
+        , next(nullptr)
+        {}
         
     };
     
@@ -124,8 +116,30 @@ protected:
     };
     
 protected:
+    // updates the head pointer and returns the old value
+    node* update_head_for_current_thread()
+    {
+        node* old_head = nullptr;
+        bool set = false;
+        while(!set)
+        {
+            old_head = head.load();
+            if(!old_head || old_head == tail.load())
+            {
+                return nullptr;
+            }
+            
+            set = head.compare_exchange_strong(old_head, old_head->next.load());
+        }
+        
+        return old_head;
+    }
+    
     void try_reclaim(node* n)
     {
+        if( !n )
+            return;
+        
         if(threads_in_pop.load() == 1)
         {
             if(nodes_to_be_deleted.free()) // was it really the only thread?

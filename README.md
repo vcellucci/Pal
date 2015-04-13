@@ -23,11 +23,9 @@ Below is how to use a TaskPool
     Pal::TaskPool<details::spmc_queue, int(int, int)> taskPool;
     
     auto future1 = taskPool.submit(addTask, 40, 2); // execute addTask async
-    
     auto future2 = taskPool.submit(addTask, 20, 10); // execute another addTask async
     
     int value1 = future1.get();
-    
     int value2 = future2.get();
     
     std::cout << value1 << std::endl; // will print 42

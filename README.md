@@ -5,10 +5,10 @@ The main goal is to create a modern C++ parallel algorithms lib with no dependen
 
 
 ## Planned Features
-It will feature standard parallel algorithms such as reduce and parallel pipeline.  It will use a work-stealing queue pattern.
+It will feature standard parallel algorithms such as reduce and parallel pipeline.  It uses a work-stealing queue pattern.
 
 ## Current Features
-* Currently features a linear task pool.  THe work is scheduled linearly accross threads.  I.e.  The first task will be scheduled to thread 1, second task to thread 2 etc...
+* Currently features a work stealing task pool.
 * Tested on Mac OS X and Linux
 
 ### How to build

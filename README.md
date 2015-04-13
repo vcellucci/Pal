@@ -4,14 +4,23 @@ NOTE: it is not designed to take advantage of GPU.
 The main goal is to create a modern C++ parallel algorithms lib with no dependencies.
 
 
-**Planned Features**
+## Planned Features
 It will feature standard parallel algorithms such as reduce and parallel pipeline.  It will use a work-stealing queue pattern.
 
-**Current Features**
+## Current Features
 * Currently features a linear task pool.  THe work is scheduled linearly accross threads.  I.e.  The first task will be scheduled to thread 1, second task to thread 2 etc...
 * Tested on Mac OS X and Linux
 
-**Some code**
+### How to build
+This project uses cmake.  It also uses [googlemock](https://code.google.com/p/googlemock/).
+
+1. Download [googlemock](https://code.google.com/p/googlemock/) and copy it into the Root of Pal.  
+(Note: there will be an option later to skip this step)
+2. Run cmake
+    cmake .. -G Xcode // for xcode
+    cmake .. -G "Unix Makefiles" // for Linux
+
+### Some code
 Below is how to use a TaskPool
 
     auto addTask = [](int x, int y)->int

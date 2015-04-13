@@ -67,13 +67,14 @@ public:
     {
         while(working.load(std::memory_order_acquire))
         {
-            if(!workQueue.empty())
+            if( workQueue.empty() && working.load(std::memory_order_acquire))
             {
-                if(!executeNextTask(workQueue) && working.load(std::memory_order_acquire))
-                {
-                    stealWork();
-                    std::this_thread::yield();
-                }
+                std::this_thread::yield();
+                stealWork();
+            }
+            else if( working.load(std::memory_order_acquire ) )
+            {
+                executeNextTask(workQueue);
             }
         }
 

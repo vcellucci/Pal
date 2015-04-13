@@ -69,7 +69,7 @@ public:
         {
             if(!workQueue.empty())
             {
-                if(!excuteNextTask(workQueue) && working.load(std::memory_order_acquire))
+                if(!executeNextTask(workQueue) && working.load(std::memory_order_acquire))
                 {
                     stealWork();
                     std::this_thread::yield();
@@ -86,7 +86,7 @@ protected:
     {
         while (!workQueue.empty())
         {
-            excuteNextTask(workQueue);
+            executeNextTask(workQueue);
         }
     }
     
@@ -99,7 +99,7 @@ protected:
                 WorkQueue* queue = worker->getQueue();
                 if( queue )
                 {
-                    if( excuteNextTask(*queue) )
+                    if(executeNextTask(*queue) )
                     {
                         return;
                     }
@@ -108,7 +108,7 @@ protected:
         }
     }
 
-    inline bool excuteNextTask(WorkQueue& queue)
+    inline bool executeNextTask(WorkQueue &queue)
     {
         std::packaged_task < R() > t;
         if (queue.pop(std::move(t)))

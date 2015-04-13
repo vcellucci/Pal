@@ -25,8 +25,7 @@ class TaskPool<ContainerT,R(Args...)>
 {
 public:
     
-    using TaskPoolWorker = TaskPoolWorker<ContainerT, R(Args...)>;
-    using TaskPoolWorkerPtr = std::shared_ptr<TaskPoolWorker>;
+    using TaskPoolWorkerPtr = std::shared_ptr<TaskPoolWorker<ContainerT, R(Args...)>>;
     
     TaskPool()
     : currentThread(0)
@@ -68,7 +67,7 @@ protected:
         
         Worker(std::size_t idx)
         {
-            worker = std::make_shared<TaskPoolWorker>(idx);
+            worker = std::make_shared<TaskPoolWorker<ContainerT, R(Args...)>>(idx);
             workerThread = std::thread(std::ref(*worker));
         }
         

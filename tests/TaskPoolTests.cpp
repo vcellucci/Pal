@@ -36,7 +36,7 @@ TEST_F(TaskPoolTests, testTaskWorker)
         return m.call();
     };
     
-    Pal::TaskPoolWorker<details::spmc_queue, int()> worker;
+    Pal::TaskPoolWorker<details::spmc_queue, int()> worker(0);
     ASSERT_TRUE(worker.isWorking());
 
     auto token = worker.push(std::move(task));
@@ -53,7 +53,7 @@ TEST_F(TaskPoolTests, testTaskWorkerWithArgs)
         return x + y;
     };
     
-    Pal::TaskPoolWorker<details::spmc_queue, int(int, int)> worker;
+    Pal::TaskPoolWorker<details::spmc_queue, int(int, int)> worker(0);
     ASSERT_TRUE(worker.isWorking());
 
     auto token = worker.push(task, 2, 3);

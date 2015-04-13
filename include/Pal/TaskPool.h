@@ -44,7 +44,7 @@ protected:
     {
         for( std::size_t i = 0; i < numThreads; i++ )
         {
-            WorkerPtr worker = std::make_shared<Worker>();
+            WorkerPtr worker =            std::make_shared<Worker>();
             workers.push_back(std::move(worker));
         }
     }
@@ -58,6 +58,7 @@ protected:
         std::thread workerThread;
         
         Worker()
+        : worker(0)
         {
             workerThread = std::thread(std::ref(worker));
         }

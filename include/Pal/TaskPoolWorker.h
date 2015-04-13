@@ -26,15 +26,13 @@ class TaskPoolWorker<ContainerT,R(Args...)>
 public:
     
     using WorkQueue = ContainerT<std::packaged_task<R()>>;
-    using WorkQueuePtr = std::shared_ptr<WorkQueue>;
     
     explicit TaskPoolWorker(std::size_t _idx)
     : working(true)
     , idx(_idx)
     {
-        workQueue = std::make_shared<WorkQueue>();
     }
-    
+  
     bool isWorking() const
     {
         return working.load(std::memory_order_acquire);
@@ -51,7 +49,7 @@ public:
         std::function<R()> f = std::bind(task, std::forward<FuncArgs>(funcArgs)...);
         std::packaged_task<R()> t(f);
         auto fut = t.get_future();
-        workQueue->push(std::move(t));
+        workQueue.push(std::move(t));
         return fut;
     }
 
@@ -60,11 +58,23 @@ public:
         working.store(false, std::memory_order_release);
     }
     
+    void addOtherWorkers(const std::vector<std::shared_ptr<TaskPoolWorker>>& workers)
+    {
+        otherWorkers = workers;
+    }
+    
     void operator()()
     {
         while(working.load(std::memory_order_acquire))
         {
-            excuteNextTask(workQueue) && working.load(std::memory_order_acquire);
+            if(!workQueue.empty())
+            {
+                if(!excuteNextTask(workQueue) && working.load(std::memory_order_acquire))
+                {
+                    stealWork();
+                    std::this_thread::yield();
+                }
+            }
         }
 
         drain();
@@ -74,16 +84,34 @@ protected:
 
     inline void drain()
     {
-        while (!workQueue->empty())
+        while (!workQueue.empty())
         {
             excuteNextTask(workQueue);
         }
     }
+    
+    void stealWork()
+    {
+        for( auto& worker : otherWorkers )
+        {
+            if(worker.get() != this)
+            {
+                WorkQueue* queue = worker->getQueue();
+                if( queue )
+                {
+                    if( excuteNextTask(*queue) )
+                    {
+                        return;
+                    }
+                }
+            }
+        }
+    }
 
-    inline bool excuteNextTask(WorkQueuePtr queue)
+    inline bool excuteNextTask(WorkQueue& queue)
     {
         std::packaged_task < R() > t;
-        if (queue->pop(std::move(t)))
+        if (queue.pop(std::move(t)))
         {
             t();
             return true;
@@ -96,8 +124,19 @@ protected:
         return false;
     }
     
+    WorkQueue* getQueue()
+    {
+        if(working.load() && !workQueue.empty())
+        {
+            return &workQueue;
+        }
+        
+        return nullptr;
+    }
+    
 protected:
-    WorkQueuePtr workQueue;
+    WorkQueue workQueue;
+    std::vector<std::shared_ptr<TaskPoolWorker>> otherWorkers;
     std::atomic_bool working;
     std::size_t idx;
 };

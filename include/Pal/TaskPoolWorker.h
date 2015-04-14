@@ -15,6 +15,7 @@
 #include <atomic>
 #include <thread>
 #include <memory>
+#include <mutex>
 
 namespace Pal{
     
@@ -93,8 +94,10 @@ protected:
     
     void stealWork()
     {
-        for( auto& worker : otherWorkers )
+        for( auto worker : otherWorkers )
         {
+            if(!worker) return;
+            
             if(worker.get() != this)
             {
                 WorkQueue* queue = worker->getQueue();
@@ -140,6 +143,7 @@ protected:
     std::vector<std::shared_ptr<TaskPoolWorker>> otherWorkers;
     std::atomic_bool working;
     std::size_t idx;
+
 };
     
 }

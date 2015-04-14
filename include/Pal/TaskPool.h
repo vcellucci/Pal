@@ -30,15 +30,22 @@ public:
     TaskPool()
     : currentThread(0)
     {
-        numThreads = std::thread::hardware_concurrency() * 2;
+        numThreads = std::thread::hardware_concurrency()*4;
         startThreads();
     }
+    
     
     template<class ...FuncArgs>
     std::future<R> submit(std::function<R(Args...)> task, FuncArgs&&... funcArgs)
     {
+        auto future = workers[currentThread]->worker->push(task, funcArgs...);
         currentThread = (currentThread + 1) % numThreads;
-        return workers[currentThread]->worker->push(task, funcArgs...);
+        return future;
+    }
+    
+    std::size_t getNumThreads() const
+    {
+        return numThreads;
     }
     
 protected:
@@ -55,6 +62,7 @@ protected:
         for(WorkerPtr& worker : workers)
         {
             worker->worker->addOtherWorkers(taskWorkers);
+            worker->start();
         }
     }
     
@@ -68,7 +76,6 @@ protected:
         Worker(std::size_t idx)
         {
             worker = std::make_shared<TaskPoolWorker<ContainerT, R(Args...)>>(idx);
-            workerThread = std::thread(std::ref(*worker));
         }
         
         ~Worker()
@@ -80,9 +87,14 @@ protected:
             }
         }
         
+        void start()
+        {
+            workerThread = std::thread(std::ref(*worker));
+        }
+        
         void stop()
         {
-            worker.stop();
+            worker->stop();
         }
     };
     

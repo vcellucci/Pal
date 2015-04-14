@@ -21,23 +21,19 @@ This project uses cmake.  It also uses [googlemock](https://code.google.com/p/go
     cmake .. -G "Unix Makefiles" // for Linux
 
 ### Some code
-Below is how to use a TaskPool
+Here is a quick demo on how to use **parallel_for_each** on a vector
 
-    auto addTask = [](int x, int y)->int
+    std::vector<int> intVector(257, 1);
+    using Iterator = std::vector<int, Pal::aligned_allocator<int> >::iterator;
+    
+    // assign 2 to each element in the vector
+    Pal::parallel_for_each(intVector.begin(), intVector.end(), [](Iterator begin, Iterator end)
     {
-        return x + y;
-    };
-    
-    //spmc_queue is a single-producer, multi-consumer lock-free queue.
-    Pal::TaskPool<details::spmc_queue, int(int, int)> taskPool;
-    
-    auto future1 = taskPool.submit(addTask, 40, 2); // execute addTask async
-    auto future2 = taskPool.submit(addTask, 20, 10); // execute another addTask async
-    
-    int value1 = future1.get();
-    int value2 = future2.get();
-    
-    std::cout << value1 << std::endl; // will print 42
-    std::cout << value2 << std::endl; // will print 30
+        // each task gets a chunk of work
+        for(auto it = begin; it != end; ++it )
+        {
+            *it = 2;
+        }
+    });
     
     

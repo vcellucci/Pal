@@ -14,11 +14,13 @@
 
 TEST_F(AlgorithmTests, testParallelForEach)
 {
-    std::vector<int> intVector(257, 1);
+    std::vector<int,Pal::aligned_allocator<int>> intVector(257, 1);
     using Iterator = std::vector<int, Pal::aligned_allocator<int> >::iterator;
     
+    // assign 2 to each element in the vector
     Pal::parallel_for_each(intVector.begin(), intVector.end(), [](Iterator begin, Iterator end)
     {
+        // each task gets a chunk of work
         for(auto it = begin; it != end; ++it )
         {
             *it = 2;

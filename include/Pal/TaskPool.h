@@ -48,6 +48,11 @@ public:
         return numThreads;
     }
     
+    void stop()
+    {
+        workers.clear();
+    }
+    
 protected:
     void startThreads()
     {
@@ -92,10 +97,6 @@ protected:
             workerThread = std::thread(std::ref(*worker));
         }
         
-        void stop()
-        {
-            worker->stop();
-        }
     };
     
 protected:

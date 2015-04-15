@@ -13,10 +13,10 @@ Visit the Wiki for more info.
 * Tested on Mac OS X and Linux
 
 ### How to build
+Building is optional, it simply builds the unit tests. Pal is currently headers only.
 This project uses cmake.  It also uses [googlemock](https://code.google.com/p/googlemock/).
 
 1. Download [googlemock](https://code.google.com/p/googlemock/) and copy it into the Root of Pal.  
-(Note: there will be an option later to skip this step)
 2. Run cmake
     cmake .. -G Xcode // for xcode
     cmake .. -G "Unix Makefiles" // for Linux

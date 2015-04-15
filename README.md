@@ -55,11 +55,11 @@ Working with arrays;
     int expected = (n*(n+1))/2;
 
     using IntVector = std::vector<int, Pal::aligned_allocator<int>>;
-    IntVector intVector;
+    IntVector v;
     for( int i = 1; i < n+1; i++ )
     {
-        intVector.push_back(i);
+        v.push_back(i);
     }
-    int value = Pal::parallel_reduce(intVector.begin(), intVector.end(), std::plus<int>());
+    int value = Pal::parallel_reduce(v.begin(), v.end(), std::plus<int>());
     std::cout << value << std::endl; // prints out 33153
 

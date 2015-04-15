@@ -10,14 +10,28 @@
 #include <vector>
 #include "Pal/Algorithms.h"
 #include "Pal/AlignedAllocator.h"
+#include "Pal/details/parition.h"
 
+
+
+TEST_F(AlgorithmTests, testChunkPartitioner)
+{
+    std::size_t numThreads = 16;
+    std::size_t numElements = 32;
+    
+    details::range_partition<std::size_t> p = details::partition(numThreads, numElements);
+    
+    ASSERT_EQ(2, p.chunks);
+    ASSERT_EQ(16, p.chunk_size);
+    ASSERT_EQ(0, p.left_over);
+}
 
 TEST_F(AlgorithmTests, testForEach)
 {
     std::vector<int,Pal::aligned_allocator<int>> intVector(257, 1);
     
     // assign 2 to each element in the vector
-    Pal::for_each(intVector.begin(), intVector.end(), [](int& val)
+    Pal::parallel_for_each(intVector.begin(), intVector.end(), [](int& val)
     {
         val = 2;
     });
@@ -36,7 +50,7 @@ TEST_F(AlgorithmTests, testParallelForEachArray)
     Pal::aligned_allocator<int> allocator;
     int* array  = allocator.allocate(256);
     
-    Pal::for_each(array, array + 256, [](int& val)
+    Pal::parallel_for_each(array, array + 256, [](int& val)
     {
         val = 2;
     });
@@ -53,7 +67,7 @@ TEST_F(AlgorithmTests, testBlockedRange)
 {
     using IntVector =std::vector<int,Pal::aligned_allocator<int>>;
     IntVector intVector(257, 1);
-    Pal::for_each_range(intVector.begin(), intVector.end(),
+    Pal::parallel_for_each_range(intVector.begin(), intVector.end(),
     [](Pal::chunk_range<IntVector::iterator> range)
     {
         for(auto it = range.begin; it != range.end; ++it)
@@ -74,7 +88,7 @@ TEST_F(AlgorithmTests, testBlockedRangeArray)
     Pal::aligned_allocator<int> allocator;
     int* array  = allocator.allocate(256);
     
-    Pal::for_each_range(0, 256,
+    Pal::parallel_for_each_range(0, 256,
     [&array](Pal::chunk_range<int> range)
     {
         for(auto it = range.begin; it != range.end; ++it)
@@ -89,5 +103,23 @@ TEST_F(AlgorithmTests, testBlockedRangeArray)
     });
     
     allocator.deallocate(array);
+}
+
+TEST_F(AlgorithmTests, testParallelReduce)
+{
+    // expected value = n(n+1)/2
+    int n = 257;
+    int expected = (n*(n+1))/2;
+    
+    using IntVector = std::vector<int, Pal::aligned_allocator<int>>;
+    IntVector intVector;
+    for( int i = 1; i < n+1; i++ )
+    {
+        intVector.push_back(i);
+    }
+    int value = Pal::parallel_reduce(intVector.begin(), intVector.end(), std::plus<int>());
+    
+    ASSERT_EQ(expected, value);
+    
 }
 

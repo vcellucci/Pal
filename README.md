@@ -22,7 +22,7 @@ This project uses cmake.  It also uses [googlemock](https://code.google.com/p/go
     cmake .. -G "Unix Makefiles" // for Linux
 
 ### Some code
-Here is a quick demo on how to use **parallel_for_each** on a vector
+Here is a quick demo on how to use **for_each** on a vector
 
     std::vector<int,Pal::aligned_allocator<int>> intVector(257, 1);
     using Iterator = std::vector<int,Pal::aligned_allocator<int> >::iterator;
@@ -33,4 +33,17 @@ Here is a quick demo on how to use **parallel_for_each** on a vector
         val = 2;
     });
     
+Need to work with arrays?
+
+    Pal::aligned_allocator<int> allocator;
+    int* array  = allocator.allocate(256);
     
+    Pal::for_each_range(0, 256, [&array](Pal::chunk_range<int> range)
+    {
+        for(auto it = range.begin; it != range.end; ++it)
+        {
+            array[it] = 2;
+        }
+    });
+    
+    allocator.deallocate(array);

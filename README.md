@@ -28,13 +28,12 @@ Here is a quick demo on how to use **parallel_for_each** on a vector
     using Iterator = std::vector<int,Pal::aligned_allocator<int> >::iterator;
     
     // assign 2 to each element in the vector
-    Pal::parallel_for_each(intVector.begin(), intVector.end(), 
-    [](Iterator begin, Iterator end)
+    Pal::for_each(intVector.begin(), intVector.end(), [](int& val)
     {
         // each task gets a chunk of work
         for(auto it = begin; it != end; ++it )
         {
-            *it = 2;
+            val = 2;
         }
     });
     

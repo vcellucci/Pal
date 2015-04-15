@@ -33,7 +33,7 @@ Here is a quick demo on how to use **for_each** on a vector
         val = 2;
     });
     
-Need to work with arrays?
+Working with arrays;
 
     Pal::aligned_allocator<int> allocator;
     int* array  = allocator.allocate(256);

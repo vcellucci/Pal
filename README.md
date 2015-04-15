@@ -9,7 +9,7 @@ It will feature standard parallel algorithms such as reduce and parallel pipelin
 Visit the Wiki for more info.
 
 ## Current Features
-* Currently features work stealing parallel_for_each algorithm
+* Currently features work stealing parallel_for_each, paralle_for_each_range and parallel_reduce algorithms
 * Tested on Mac OS X and Linux
 
 ### How to build
@@ -22,13 +22,13 @@ This project uses cmake.  It also uses [googlemock](https://code.google.com/p/go
     cmake .. -G "Unix Makefiles" // for Linux
 
 ### Some code
-Here is a quick demo on how to use **for_each** on a vector
+Here is a quick demo on how to use **parallel_for_each** on a vector
 
     std::vector<int,Pal::aligned_allocator<int>> intVector(257, 1);
     using Iterator = std::vector<int,Pal::aligned_allocator<int> >::iterator;
     
     // assign 2 to each element in the vector
-    Pal::for_each(intVector.begin(), intVector.end(), [](int& val)
+    Pal::parallel_for_each(intVector.begin(), intVector.end(), [](int& val)
     {
         val = 2;
     });
@@ -38,7 +38,7 @@ Working with arrays;
     Pal::aligned_allocator<int> allocator;
     int* array  = allocator.allocate(256);
     
-    Pal::for_each_range(0, 256, [&array](Pal::chunk_range<int> range)
+    Pal::parallel_for_each_range(0, 256, [&array](Pal::chunk_range<int> range)
     {
         for(auto it = range.begin; it != range.end; ++it)
         {
@@ -47,3 +47,19 @@ Working with arrays;
     });
     
     allocator.deallocate(array);
+
+**parallel_reduce** will take a list and reduce it to one value using a binary function.  Example below features parallel sum implementation using stl::plus.  The binary functor can be any binary function.
+
+    // expected value = n(n+1)/2
+    int n = 257;
+    int expected = (n*(n+1))/2;
+
+    using IntVector = std::vector<int, Pal::aligned_allocator<int>>;
+    IntVector intVector;
+    for( int i = 1; i < n+1; i++ )
+    {
+        intVector.push_back(i);
+    }
+    int value = Pal::parallel_reduce(intVector.begin(), intVector.end(), std::plus<int>());
+    std::cout << value << std::endl; // prints out 33153
+

@@ -56,10 +56,11 @@ Working with arrays;
 
     using IntVector = std::vector<int, Pal::aligned_allocator<int>>;
     IntVector v;
-    for( int i = 1; i < n+1; i++ )
+    int counter = 1;
+    std::generate(v.begin(), v.end(), [&counter]()
     {
-        v.push_back(i);
-    }
+        return counter++;
+    });
     int value = Pal::parallel_reduce(v.begin(), v.end(), std::plus<int>());
     std::cout << value << std::endl; // prints out 33153
 

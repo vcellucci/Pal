@@ -123,19 +123,9 @@ TEST_F(AlgorithmTests, testParallelReduce)
     ASSERT_EQ(expected, value);
 }
 
-TEST_F(AlgorithmTests, testParallelPrefixScan)
+TEST_F(AlgorithmTests, testParallelPipeline)
 {
-    using IntVector = std::vector<int, Pal::aligned_allocator<int>>;
-    IntVector v(256);
-    int counter = 1;
-    std::generate(v.begin(), v.end(), [&counter]()
-    {
-        return counter++;
-    });
     
-    std::for_each(v.begin(), v.end(), [](int& i)
-    {
-    });
 }
 
 

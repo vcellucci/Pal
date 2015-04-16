@@ -112,14 +112,31 @@ TEST_F(AlgorithmTests, testParallelReduce)
     int expected = (n*(n+1))/2;
     
     using IntVector = std::vector<int, Pal::aligned_allocator<int>>;
-    IntVector intVector;
-    for( int i = 1; i < n+1; i++ )
+    IntVector v(n);
+    int counter = 1;
+    std::generate(v.begin(), v.end(), [&counter]()
     {
-        intVector.push_back(i);
-    }
-    int value = Pal::parallel_reduce(intVector.begin(), intVector.end(), std::plus<int>());
+        return counter++;
+    });
     
+    int value = Pal::parallel_reduce(v.begin(), v.end(), std::plus<int>());
     ASSERT_EQ(expected, value);
-    
 }
+
+TEST_F(AlgorithmTests, testParallelPrefixScan)
+{
+    using IntVector = std::vector<int, Pal::aligned_allocator<int>>;
+    IntVector v(256);
+    int counter = 1;
+    std::generate(v.begin(), v.end(), [&counter]()
+    {
+        return counter++;
+    });
+    
+    std::for_each(v.begin(), v.end(), [](int& i)
+    {
+    });
+}
+
+
 

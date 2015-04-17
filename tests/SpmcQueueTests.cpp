@@ -180,7 +180,7 @@ void consume(std::atomic_bool& done, int* array, int_queue& q)
 
 TEST_F(SpmcQueueTests, testParallel)
 {
-    constexpr int size = 200000;
+    constexpr int size = 2000;
     int array[size];
     memset(array, -1, sizeof(array));
     int_queue q;

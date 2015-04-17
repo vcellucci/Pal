@@ -28,6 +28,11 @@ public:
         arrayBuffer = aligned_allocator<T>().allocate(maxSize);
     }
     
+    ~RingBuffer()
+    {
+        aligned_allocator<T>().deallocate(arrayBuffer);
+    }
+    
     bool empty()
     {
         return (size.load() == 0);
@@ -39,8 +44,19 @@ public:
         {
             return false;
         }
-        arrayBuffer[writeIndex.load()] = val;
-        writeIndex = (writeIndex + 1) % maxSize;
+        
+        auto oldWriteIdx = writeIndex.load();
+        auto writeIdx = (oldWriteIdx + 1) % maxSize;
+        while (!writeIndex.compare_exchange_weak(oldWriteIdx, writeIdx))
+        {
+            if(size.load() >= maxSize)
+            {
+                return false;
+            }
+            writeIdx = (oldWriteIdx + 1) % maxSize;
+        }
+        
+        arrayBuffer[oldWriteIdx] = val;
         size++;
         return true;
     }

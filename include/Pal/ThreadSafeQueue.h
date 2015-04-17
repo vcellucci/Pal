@@ -15,44 +15,73 @@
 
 namespace Pal {
     
-template<class T>
+template<class T, class Lock=Spinlock>
 class ThreadSafeQueue
 {
 public:
     ThreadSafeQueue()
     {
-        
+        head = new node();
+        tail = head;
     }
     
     
     bool empty()
     {
-        std::lock_guard<Spinlock> lk(lock);
-        return queue.empty();
+        std::lock_guard<Lock> lk(lock);
+        return head == tail;
     }
     
     void push(T&& t)
     {
-        std::lock_guard<Spinlock> lk(lock);
-        queue.push_back(t);
+        std::lock_guard<Lock> lk(lock);
+        node* newNode = new node(t);
+        tail->next = newNode;
+        tail = newNode;
     }
     
     bool pop(T&& t)
     {
-        std::lock_guard<Spinlock> lk(lock);
-        if( queue.empty() )
+        std::lock_guard<Lock> lk(lock);
+        if( head == tail || head == nullptr)
         {
             return false;
         }
         
-        t = std::move(queue.front());
-        queue.pop_front();
+        auto temp = head;
+        head = head->next;
+        if( head == nullptr )
+        {
+            head = tail;
+            return false;
+        }
+        t = std::move(head->val);
+        if( temp )
+        {
+            delete temp;
+        }
         return true;
     }
     
 protected:
-    std::deque<T> queue;
-    Spinlock lock;
+    struct node
+    {
+        node* next;
+        T val;
+        
+        node()
+        :next(nullptr){}
+        
+        node(T& v)
+        :next(nullptr)
+        ,val(v)
+        {
+            
+        }
+    };
+    Lock lock;
+    node* head;
+    node* tail;
 };
     
 }

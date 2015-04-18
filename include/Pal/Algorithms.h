@@ -15,6 +15,7 @@
 #include "AlignedAllocator.h"
 #include "details/spmc_queue.h"
 #include "details/parition.h"
+#include "ParallelPipeline.h"
 
 namespace Pal {
     

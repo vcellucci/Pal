@@ -125,6 +125,36 @@ TEST_F(AlgorithmTests, testParallelReduce)
 
 TEST_F(AlgorithmTests, testParallelPipeline)
 {
+    auto inputStage = []()->int
+    {
+        return 1;
+    };
+    
+    auto incrementStage = [](int number)->int
+    {
+        return ++number;
+    };
+    
+    auto squareStage = [](int number)->int
+    {
+        return (number*number);
+    };
+    
+    auto finaStage = [](int number)->int
+    {
+        return (number--);
+    };
+    
+    Pal::parallel_pipeline<int> pipeline;
+    
+    pipeline.input(inputStage);
+    
+    pipeline.then(incrementStage);
+    pipeline.then(squareStage);
+    
+    pipeline.output(finaStage);
+    int result = pipeline.run();
+    ASSERT_EQ(3, result);
     
 }
 

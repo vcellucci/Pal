@@ -123,7 +123,7 @@ TEST_F(AlgorithmTests, testParallelReduce)
     ASSERT_EQ(expected, value);
 }
 
-TEST_F(AlgorithmTests, testParallelPipeline)
+TEST_F(AlgorithmTests, DISABLED_testParallelPipeline)
 {
     auto inputStage = []()->int
     {

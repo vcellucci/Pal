@@ -7,18 +7,18 @@
 //
 
 #include "RingBufferTests.h"
-#include "Pal/RingBuffer.h"
+#include "Pal/details/ring_buffer.h"
 #include <thread>
 
 TEST_F(RingBufferTests, testRingBuffer)
 {
-    Pal::RingBuffer<int> rb(16);
+    details::ring_buffer<int> rb(16);
     ASSERT_TRUE(rb.empty());
 }
 
 TEST_F(RingBufferTests, testPush)
 {
-    Pal::RingBuffer<int> rb(16);
+    details::ring_buffer<int> rb(16);
     ASSERT_TRUE(rb.empty());
     ASSERT_TRUE(rb.push(33));
     ASSERT_FALSE(rb.empty());
@@ -26,7 +26,7 @@ TEST_F(RingBufferTests, testPush)
 
 TEST_F(RingBufferTests, testPop)
 {
-    Pal::RingBuffer<int> rb(16);
+    details::ring_buffer<int> rb(16);
     int val = 0;
     ASSERT_FALSE(rb.pop((val)));
     ASSERT_TRUE(rb.push(33));
@@ -38,7 +38,7 @@ TEST_F(RingBufferTests, testPop)
 
 TEST_F(RingBufferTests, testOverflow)
 {
-    Pal::RingBuffer<int> rb(16);
+    details::ring_buffer<int> rb(16);
     for( int i = 0; i < 16; i++)
     {
         ASSERT_TRUE(rb.push(i));
@@ -71,7 +71,7 @@ TEST_F(RingBufferTests, testOverflow)
 
 TEST_F(RingBufferTests, testParallelPush)
 {
-    Pal::RingBuffer<int> rb(20);
+    details::ring_buffer<int> rb(20);
     
     auto a = [&rb]()
     {

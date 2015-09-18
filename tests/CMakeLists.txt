@@ -6,8 +6,8 @@ file(GLOB HDR *.h)
 file(GLOB INCLUDES ../include/Pal/*.h)
 file(GLOB DETAIL ../include/Pal/details/*.h)
 
-include_directories("../gmock-1.7.0/include"
-                    "../gmock-1.7.0/gtest/include"
+include_directories("../googlemock/include"
+                    "../googletest/include"
                     "../include")
 
 

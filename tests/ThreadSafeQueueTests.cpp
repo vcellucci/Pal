@@ -62,7 +62,7 @@ void consume(std::atomic_bool& done, int* array, int_queue& q)
 {
     while (!done.load())
     {
-        int val;
+        int val = std::numeric_limits<int>::min();
         if(q.pop(std::move(val)))
         {
             array[val] = val;
@@ -76,7 +76,7 @@ void consume(std::atomic_bool& done, int* array, int_queue& q)
     // drain
     while (!q.empty())
     {
-        int val;
+        int val = std::numeric_limits<int>::min();
         if(q.pop(std::move(val)))
         {
             array[val] = val;

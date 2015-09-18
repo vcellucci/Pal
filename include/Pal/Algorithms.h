@@ -95,6 +95,18 @@ void parallel_for_each(Iterator begin, Iterator end, Callable callable)
     });
 }
     
+template<class Iterator, class Results, class TaskPool, class Combiner>
+Iterator submit_tasks( const details::range_partition<std::size_t>& parts, Iterator& it,  Results& results, TaskPool& taskPool, Combiner& combine)
+{
+    for(std::size_t i = 0; i < parts.chunks; i++ )
+    {
+        auto last = it + parts.chunk_size;
+        results[i] = taskPool.submit(combine, it, last);
+        it += parts.chunk_size;
+    }
+    return it;
+}
+    
 template<class Iterator, class BinaryFunctor>
 typename std::iterator_traits<Iterator>::value_type parallel_reduce(Iterator begin, Iterator end, BinaryFunctor functor)
 {
@@ -118,20 +130,14 @@ typename std::iterator_traits<Iterator>::value_type parallel_reduce(Iterator beg
         return result;
     };
     
-    auto it = begin;
-    for(std::size_t i = 0; i < parts.chunks; i++ )
-    {
-        auto last = it + parts.chunk_size;
-        results[i] = taskPool.submit(combine, it, last);
-        it += parts.chunk_size;
-    }
-    
+    auto it = submit_tasks(parts, begin, results, taskPool, combine);
     if(parts.left_over)
     {
         auto last = it + parts.left_over;
         std::size_t index = parts.chunks -1 + parts.left_over;
         results[index] = taskPool.submit(combine, it, last);
     }
+    
     
     val_type result = results[0].get();
     for (std::size_t i = 1; i < results.size(); i++)

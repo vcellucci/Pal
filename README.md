@@ -55,7 +55,7 @@ Working with arrays;
     int expected = (n*(n+1))/2;
 
     using IntVector = std::vector<int, Pal::aligned_allocator<int>>;
-    IntVector v;
+    IntVector v(n);
     int counter = 1;
     std::generate(v.begin(), v.end(), [&counter]()
     {
